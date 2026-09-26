@@ -93,14 +93,47 @@ void GPIO_Init(void) {
 
 void TIM2_Init(void) { // PWM for servo
 	RCC->APB1ENR |= (1 << 0);
+
+	TIM2->PSC = 15;
+	TIM2->ARR = 20000 - 1;
+
+	TIM2->CCMR1 &= ~(7 << 12);
+	TIM2->CCMR1 |= (6 << 12);   // PWM mode 1, kanał 2
+
+	TIM2->CCER |= (1 << 4);     // CC2E
+
+	TIM2->CR1 |= (1 << 0);      // CEN
 }
 
 void ADC1_Init(void) { // ADC for sensors
 	RCC->APB2ENR |= (1 << 8);
-}
 
+	ADC1->CR1 &= ~(3 << 24);    // RES = 00 = 12-bit
+
+	ADC1->CR2 &= ~(1 << 1);     // CONT = 0 = single conversion
+
+	ADC1->SMPR1 &= ~(7 << 3);
+	ADC1->SMPR1 |= (7 << 3);    // SMP11 = 480 cykli
+
+	ADC1->SMPR1 &= ~(7 << 6);
+	ADC1->SMPR1 |= (7 << 6);    // SMP12 = 480 cykli
+
+	ADC1->CR2 |= (1 << 0);      // ADON
+}
 void I2C1_Init(void) {
 	RCC->APB1ENR |= (1 << 21);
+
+	I2C1->CR1 &= ~(1 << 0);
+
+	I2C1->CR2 &= ~(63 << 0);
+	I2C1->CR2 |= (16 << 0);      // FREQ
+
+	I2C1->CCR &= ~(0xFFF << 0);
+	I2C1->CCR |= (80 << 0);      // CCR
+
+	I2C1->TRISE = 17;
+
+	I2C1->CR1 |= (1 << 0);       // PE
 }
 
 void Init(void) {
