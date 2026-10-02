@@ -30,9 +30,11 @@
 
 #define PORT_SENSOR1 GPIOC
 #define PIN_SENSOR1 1
+#define CHANNEL_SENSOR1 11
 
 #define PORT_SENSOR2 GPIOC
 #define PIN_SENSOR2 2
+#define CHANNEL_SENSOR2 12
 
 #define PORT_SERVO GPIOB
 #define PIN_SERVO 3
@@ -43,6 +45,14 @@
 
 #define PORT_RESET GPIOC
 #define PIN_RESET 8
+
+#define TOLERANCE 100
+
+uint16_t sensor1_A = 0;
+uint16_t sensor1_B = 0;
+uint16_t sensor2_A = 0;
+uint16_t sensor2_B = 0;
+uint8_t adc_error = 0;
 
 ///////////////////////////////
 
@@ -141,6 +151,33 @@ void Init(void) {
 	TIM2_Init();
 	ADC1_Init();
 	I2C1_Init();
+}
+
+uint16_t Read_ADC(uint8_t channel) {
+	ADC1->SQR3 &= ~(0x1F << 0);
+	ADC1->SQR3 |= (channel << 0);
+	ADC1->CR2 |= (1 << 30);
+	while(!(ADC1->SR & (1 << 1))) { }
+	uint16_t value = ADC1->DR;
+	return value;
+}
+
+void Data_Redundancy_Check(void) {
+	uint16_t sensor1 = Read_ADC(CHANNEL_SENSOR1);
+	sensor1_A = sensor1;
+	sensor1_B = sensor1;
+
+	uint16_t sensor2 = Read_ADC(CHANNEL_SENSOR2);
+	sensor2_A = sensor2;
+	sensor2_B = sensor2;
+
+	if(sensor1_A != sensor1_B) adc_error = 1;
+	if(sensor2_A != sensor2_B) adc_error = 1;
+
+	int16_t difference = sensor1 - sensor2;
+	if(difference < 0) difference *= -1;
+
+	if(difference > TOLERANCE) adc_error = 1;
 }
 
 int main(void)
