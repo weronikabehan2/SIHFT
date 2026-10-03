@@ -17,134 +17,17 @@
  */
 
 #include <stdint.h>
+#include "algorithms.h"
+#include "adc.h"
+#include "gpio.h"
+#include "i2c.h"
+#include "tim.h"
 #include "stm32f4xx.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
   #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
-///////////////////////////////
-
-#define PORT_LED GPIOC
-#define PIN_LED 0
-
-#define PORT_SENSOR1 GPIOC
-#define PIN_SENSOR1 1
-#define CHANNEL_SENSOR1 11
-
-#define PORT_SENSOR2 GPIOC
-#define PIN_SENSOR2 2
-#define CHANNEL_SENSOR2 12
-
-#define PORT_SERVO GPIOB
-#define PIN_SERVO 3
-
-#define PORT_SCL_SCK GPIOB
-#define PIN_SCL 8
-#define PIN_SCK 9
-
-#define PORT_RESET GPIOC
-#define PIN_RESET 8
-
-#define TOLERANCE 100
-
-uint16_t sensor1_A = 0;
-uint16_t sensor1_B = 0;
-uint16_t sensor2_A = 0;
-uint16_t sensor2_B = 0;
-uint8_t adc_error = 0;
-
-///////////////////////////////
-
-void GPIO_Init(void) {
-	// ports
-	RCC->AHB1ENR |= (1 << 1);
-	RCC->AHB1ENR |= (1 << 2);
-
-	// led init
-	PORT_LED->MODER &= ~(3 << (2 * PIN_LED));
-
-	PORT_LED->MODER |= (1 << (2 * PIN_LED)); // output
-
-	// sensor init
-	PORT_SENSOR1->MODER &= ~(3 << (2 * PIN_SENSOR1));
-	PORT_SENSOR2->MODER &= ~(3 << (2 * PIN_SENSOR2));
-
-	PORT_SENSOR1->MODER |= (3 << (2 * PIN_SENSOR1)); // analog
-	PORT_SENSOR2->MODER |= (3 << (2 * PIN_SENSOR2));
-
-	// servo init
-	PORT_SERVO->MODER &= ~(3 << (2 * PIN_SERVO));
-
-	PORT_SERVO->MODER |= (2 << (2 * PIN_SERVO)); // alternate
-
-	PORT_SERVO->AFR[0] &= ~(0xF << (4 * PIN_SERVO));
-
-	PORT_SERVO->AFR[0] |= (1 << (4 * PIN_SERVO)); // AF1
-
-	// i2c init
-	PORT_SCL_SCK->MODER &= ~(3 << (2 * PIN_SCL));
-	PORT_SCL_SCK->MODER &= ~(3 << (2 * PIN_SCK));
-	PORT_RESET->MODER &= ~(1 << (2 * PIN_RESET));
-
-	PORT_SCL_SCK->MODER |= (2 << (2 * PIN_SCL)); // alternate
-	PORT_SCL_SCK->MODER |= (2 << (2 * PIN_SCK));
-	PORT_RESET->MODER |= (1 << (2 * PIN_RESET)); // output
-
-	PORT_SCL_SCK->OTYPER |= (1 << PIN_SCL); // open drain
-	PORT_SCL_SCK->OTYPER |= (1 << PIN_SCK);
-
-	PORT_SCL_SCK->AFR[1] &= ~(0xF << (4 * (PIN_SCL - 8)));
-	PORT_SCL_SCK->AFR[1] &= ~(0xF << (4 * (PIN_SCK - 8)));
-
-	PORT_SCL_SCK->AFR[1] |= (4 << (4 * (PIN_SCL - 8))); // AF4
-	PORT_SCL_SCK->AFR[1] |= (4 << (4 * (PIN_SCK - 8))); // AF4
-}
-
-void TIM2_Init(void) { // PWM for servo
-	RCC->APB1ENR |= (1 << 0);
-
-	TIM2->PSC = 15;
-	TIM2->ARR = 20000 - 1;
-
-	TIM2->CCMR1 &= ~(7 << 12);
-	TIM2->CCMR1 |= (6 << 12);   // PWM mode 1, kanał 2
-
-	TIM2->CCER |= (1 << 4);     // CC2E
-
-	TIM2->CR1 |= (1 << 0);      // CEN
-}
-
-void ADC1_Init(void) { // ADC for sensors
-	RCC->APB2ENR |= (1 << 8);
-
-	ADC1->CR1 &= ~(3 << 24);    // RES = 00 = 12-bit
-
-	ADC1->CR2 &= ~(1 << 1);     // CONT = 0 = single conversion
-
-	ADC1->SMPR1 &= ~(7 << 3);
-	ADC1->SMPR1 |= (7 << 3);    // SMP11 = 480 cykli
-
-	ADC1->SMPR1 &= ~(7 << 6);
-	ADC1->SMPR1 |= (7 << 6);    // SMP12 = 480 cykli
-
-	ADC1->CR2 |= (1 << 0);      // ADON
-}
-void I2C1_Init(void) {
-	RCC->APB1ENR |= (1 << 21);
-
-	I2C1->CR1 &= ~(1 << 0);
-
-	I2C1->CR2 &= ~(63 << 0);
-	I2C1->CR2 |= (16 << 0);      // FREQ
-
-	I2C1->CCR &= ~(0xFFF << 0);
-	I2C1->CCR |= (80 << 0);      // CCR
-
-	I2C1->TRISE = 17;
-
-	I2C1->CR1 |= (1 << 0);       // PE
-}
 
 void Init(void) {
 	GPIO_Init();
@@ -153,39 +36,10 @@ void Init(void) {
 	I2C1_Init();
 }
 
-uint16_t Read_ADC(uint8_t channel) {
-	ADC1->SQR3 &= ~(0x1F << 0);
-	ADC1->SQR3 |= (channel << 0);
-	ADC1->CR2 |= (1 << 30);
-	while(!(ADC1->SR & (1 << 1))) { }
-	uint16_t value = ADC1->DR;
-	return value;
-}
-
-void Data_Redundancy_Check(void) {
-	uint16_t sensor1 = Read_ADC(CHANNEL_SENSOR1);
-	sensor1_A = sensor1;
-	sensor1_B = sensor1;
-
-	uint16_t sensor2 = Read_ADC(CHANNEL_SENSOR2);
-	sensor2_A = sensor2;
-	sensor2_B = sensor2;
-
-	if(sensor1_A != sensor1_B) adc_error = 1;
-	if(sensor2_A != sensor2_B) adc_error = 1;
-
-	int16_t difference = sensor1 - sensor2;
-	if(difference < 0) difference *= -1;
-
-	if(difference > TOLERANCE) adc_error = 1;
-}
-
-int main(void)
-{
+int main(void) {
 	Init();
-    /* Loop forever */
 	while(1) {
-
+	    Data_Redundancy_Check();
+	    Instruction_Redundancy_Check();
 	}
-
 }
