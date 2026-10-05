@@ -12,4 +12,7 @@
 
 void TIM2_Init(void);
 
+uint16_t Get_Pulse(int8_t angle);
+void Set_Position(int8_t angle);
+
 #endif /* TIM_H_ */

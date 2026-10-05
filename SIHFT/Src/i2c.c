@@ -22,3 +22,19 @@ void I2C1_Init(void) {
 	I2C1->CR1 |= (1 << 0);       // PE
 }
 
+void I2C_Start(void) {
+	I2C1->CR1 |= (1 << 8);
+	while(!(I2C1->SR1 & (1 << 0)));
+}
+
+void I2C_SendAddress(void) {
+
+}
+
+void I2C_SendByte(void) {
+
+}
+
+void I2C_Stop(void) {
+
+}

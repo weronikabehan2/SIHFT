@@ -21,3 +21,8 @@ void ADC1_Init(void) { // ADC for sensors
 
 	ADC1->CR2 |= (1 << 0);      // ADON
 }
+
+int16_t ADC_to_Angle(uint16_t adc_value) {
+	int32_t value = -90 + (adc_value * 180) / 4095;
+	return (int16_t)value;
+}

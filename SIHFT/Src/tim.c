@@ -21,3 +21,14 @@ void TIM2_Init(void) { // PWM for servo
 	TIM2->CR1 |= (1 << 0);      // CEN
 }
 
+uint16_t Get_Pulse(int16_t angle) {
+	uint16_t pulse = 1500 + (angle * 500) / 90;
+	return pulse;
+}
+
+void Set_Position(int16_t angle) {
+	if(angle >= -90 && angle <= 90) {
+		uint16_t pulse = Get_Pulse(angle);
+		TIM2->CCR2 = pulse;
+	}
+}

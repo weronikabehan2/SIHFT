@@ -12,4 +12,6 @@
 
 void ADC1_Init(void);
 
+int16_t ADC_to_Angle(uint16_t adc_value);
+
 #endif /* ADC_H_ */

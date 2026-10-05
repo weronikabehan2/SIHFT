@@ -12,12 +12,16 @@
 
 #include <stdint.h>
 #include "stm32f4xx.h"
+#include "tim.h"
+#include "adc.h"
+#include "gpio.h"
 
 typedef struct {
 	uint16_t sensor1_A;
 	uint16_t sensor1_B;
 	uint16_t sensor2_A;
 	uint16_t sensor2_B;
+	uint16_t average;
 	uint8_t adc_error;
 } AlgStruct;
 
@@ -27,5 +31,6 @@ uint16_t Read_ADC(uint8_t channel);
 void Data_Redundancy_Check(void);
 void Instruction_Redundancy_Check(void);
 
+void Safety_Handle(void);
 
 #endif /* ALGORITHMS_H_ */
