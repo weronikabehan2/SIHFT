@@ -17,11 +17,9 @@
  */
 
 #include <stdint.h>
-#include "algorithms.h"
-#include "adc.h"
-#include "gpio.h"
-#include "i2c.h"
-#include "tim.h"
+#include "acquisition.h"
+#include "sihft.h"
+#include "fault_injector.h"
 #include "stm32f4xx.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
@@ -33,13 +31,11 @@ void Init(void) {
 	GPIO_Init();
 	TIM2_Init();
 	ADC1_Init();
-	I2C1_Init();
 }
 
 int main(void) {
 	Init();
 	while(1) {
-	    Data_Redundancy_Check();
-	    Instruction_Redundancy_Check();
+
 	}
 }

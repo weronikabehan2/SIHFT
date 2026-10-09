@@ -22,7 +22,13 @@ void ADC1_Init(void) { // ADC for sensors
 	ADC1->CR2 |= (1 << 0);      // ADON
 }
 
-int16_t ADC_to_Angle(uint16_t adc_value) {
-	int32_t value = -90 + (adc_value * 180) / 4095;
-	return (int16_t)value;
+
+
+uint16_t Read_ADC(uint8_t channel) {
+	ADC1->SQR3 &= ~(0x1F << 0);
+	ADC1->SQR3 |= (channel << 0);
+	ADC1->CR2 |= (1 << 30);
+	while(!(ADC1->SR & (1 << 1))) { }
+	uint16_t value = ADC1->DR;
+	return value;
 }

@@ -1,30 +1,20 @@
 /*
- * algorithms.c
+ * sihft.c
  *
- *  Created on: 3 paź 2026
+ *  Created on: 9 paź 2026
  *      Author: weronika
  */
-#include "algorithms.h"
-#include "gpio.h"
+#include "sihft.h"
 
 AlgStruct alg = {0};
 
-uint16_t Read_ADC(uint8_t channel) {
-	ADC1->SQR3 &= ~(0x1F << 0);
-	ADC1->SQR3 |= (channel << 0);
-	ADC1->CR2 |= (1 << 30);
-	while(!(ADC1->SR & (1 << 1))) { }
-	uint16_t value = ADC1->DR;
-	return value;
-}
-
-void Data_Redundancy_Check(void) {
+void SIHFT_DataCheck(void) {
 	alg.adc_error = 0;
-	uint16_t sensor1 = Read_ADC(CHANNEL_SENSOR1);
+	uint16_t sensor1 = ADC_Read(CHANNEL_SENSOR1);
 	alg.sensor1_A = sensor1;
 	alg.sensor1_B = sensor1;
 
-	uint16_t sensor2 = Read_ADC(CHANNEL_SENSOR2);
+	uint16_t sensor2 = ADC_Read(CHANNEL_SENSOR2);
 	alg.sensor2_A = sensor2;
 	alg.sensor2_B = sensor2;
 
@@ -37,7 +27,7 @@ void Data_Redundancy_Check(void) {
 	if(difference > TOLERANCE) alg.adc_error = 1;
 }
 
-void Instruction_Redundancy_Check(void) {
+void SIHFT_InstrCheck(void) {
 	uint16_t value1 = (alg.sensor1_A + alg.sensor2_A) / 2;
 	uint16_t value2 = (alg.sensor1_A + alg.sensor2_A) / 2;
 
@@ -45,13 +35,13 @@ void Instruction_Redundancy_Check(void) {
 	alg.average = value1;
 }
 
-void Safety_Handle(void) {
+void SIHFT_Decide(void) {
 	if(alg.adc_error != 1) {
-		Led_Off();
-		Set_Position(ADC_to_Angle(alg.average));
+		ACQ_NormalState();
+		Set_Position(ACQ_ValueToAngle(alg.average));
 	}
 	else {
-		Led_On();
-		Set_Position(0);
+		ACQ_SafeState();
 	}
 }
+

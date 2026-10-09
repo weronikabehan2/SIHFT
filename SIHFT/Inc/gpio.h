@@ -24,12 +24,6 @@
 #define PORT_SERVO GPIOB
 #define PIN_SERVO 3
 
-#define PORT_SCL_SCK GPIOB
-#define PIN_SCL 8
-#define PIN_SCK 9
-
-#define PORT_RESET GPIOC
-#define PIN_RESET 8
 
 void GPIO_Init(void);
 
