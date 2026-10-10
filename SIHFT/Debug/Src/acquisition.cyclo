@@ -1,0 +1,6 @@
+../Inc/gpio.h:30:20:Led_Off	1
+../Inc/gpio.h:31:20:Led_On	1
+../Src/acquisition.c:9:6:ACQ_Init	1
+../Src/acquisition.c:15:9:ACQ_ValueToAngle	1
+../Src/acquisition.c:20:6:ACQ_SafeState	1
+../Src/acquisition.c:25:6:ACQ_NormalState	1

@@ -47,6 +47,6 @@ extern AlgStruct alg;
 void SIHFT_DataCheck(void);
 void SIHFT_InstrCheck(void);
 void SIHFT_Decide(void);
-static bool Check(uint8_t val);
+void SIHFT_StoreData(void);
 
 #endif /* SIHFT_H_ */

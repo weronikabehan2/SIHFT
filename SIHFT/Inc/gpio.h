@@ -27,8 +27,8 @@
 
 void GPIO_Init(void);
 
-void Led_Off(void) { PORT_LED->BSRR |= (1 << (PIN_LED + 16)); }
-void Led_On(void) { PORT_LED->BSRR |= (1 << PIN_LED); }
+static inline void Led_Off(void) { PORT_LED->BSRR = (1 << (PIN_LED + 16)); }
+static inline void Led_On(void) { PORT_LED->BSRR = (1 << PIN_LED); }
 
 #endif /* GPIO_H_ */
 

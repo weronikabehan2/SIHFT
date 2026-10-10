@@ -19,23 +19,26 @@
 #include <stdint.h>
 #include "acquisition.h"
 #include "sihft.h"
-#include "fault_injector.h"
 #include "stm32f4xx.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
   #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
-
 void Init(void) {
-	GPIO_Init();
-	TIM2_Init();
-	ADC1_Init();
+	ACQ_Init();
 }
 
 int main(void) {
+	 SCB->CPACR |= (0xFU << 20);
+	 __DSB();
+	 __ISB();
 	Init();
+	Led_On();
 	while(1) {
-
+		SIHFT_StoreData();
+		SIHFT_DataCheck();
+		SIHFT_InstrCheck();
+		SIHFT_Decide();
 	}
 }

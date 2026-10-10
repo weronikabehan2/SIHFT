@@ -24,7 +24,7 @@ void ADC1_Init(void) { // ADC for sensors
 
 
 
-uint16_t Read_ADC(uint8_t channel) {
+uint16_t ADC_Read(uint8_t channel) {
 	ADC1->SQR3 &= ~(0x1F << 0);
 	ADC1->SQR3 |= (channel << 0);
 	ADC1->CR2 |= (1 << 30);
